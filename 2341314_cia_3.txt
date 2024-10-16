@@ -1,0 +1,166 @@
+mysql> use harry;
+Database changed
+mysql> CREATE TABLE Ration_Card_Holder (
+    ->     card_number INT PRIMARY KEY,
+    ->     name VARCHAR(50),
+    ->     address VARCHAR(100),
+    ->     phone_number VARCHAR(15)
+    -> );
+Query OK, 0 rows affected (0.06 sec)
+
+mysql>
+mysql> CREATE TABLE Commodities (
+    ->     commodity_id INT PRIMARY KEY,
+    ->     name VARCHAR(50),
+    ->     type VARCHAR(50),
+    ->     price DECIMAL(10, 2)
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql>
+mysql> CREATE TABLE Distribution_Center (
+    ->     center_id INT PRIMARY KEY,
+    ->     name VARCHAR(50),
+    ->     location VARCHAR(100)
+    -> );
+Query OK, 0 rows affected (0.02 sec)
+
+mysql>
+mysql> CREATE TABLE Suppliers (
+    ->     supplier_id INT PRIMARY KEY,
+    ->     name VARCHAR(50),
+    ->     contact VARCHAR(15)
+    -> );
+Query OK, 0 rows affected (0.01 sec)
+
+mysql>
+mysql> CREATE TABLE Transactions (
+    ->     transaction_id INT PRIMARY KEY,
+    ->     card_number INT,
+    ->     commodity_id INT,
+    ->     center_id INT,
+    ->     date DATE,
+    ->     quantity INT,
+    ->     total_amount DECIMAL(10, 2),
+    ->     FOREIGN KEY (card_number) REFERENCES Ration_Card_Holder(card_number),
+    ->     FOREIGN KEY (commodity_id) REFERENCES Commodities(commodity_id),
+    ->     FOREIGN KEY (center_id) REFERENCES Distribution_Center(center_id)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql>
+mysql> CREATE TABLE Supplies (
+    ->     supply_id INT PRIMARY KEY,
+    ->     supplier_id INT,
+    ->     commodity_id INT,
+    ->     center_id INT,
+    ->     supply_date DATE,
+    ->     quantity INT,
+    ->     FOREIGN KEY (supplier_id) REFERENCES Suppliers(supplier_id),
+    ->     FOREIGN KEY (commodity_id) REFERENCES Commodities(commodity_id),
+    ->     FOREIGN KEY (center_id) REFERENCES Distribution_Center(center_id)
+    -> );
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> -- Inserting data into Ration_Card_Holder
+mysql> INSERT INTO Ration_Card_Holder (card_number, name, address, phone_number)
+    -> VALUES (101, 'Amit Kumar', 'Delhi', '9876543210'),
+    ->        (102, 'Sunita Sharma', 'Mumbai', '9123456789');
+Query OK, 2 rows affected (0.02 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql>
+mysql> -- Inserting data into Commodities
+mysql> INSERT INTO Commodities (commodity_id, name, type, price)
+    -> VALUES (1, 'Rice', 'Grain', 30.00),
+    ->        (2, 'Wheat', 'Grain', 25.00);
+Query OK, 2 rows affected (0.01 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql>
+mysql> -- Inserting data into Distribution_Center
+mysql> INSERT INTO Distribution_Center (center_id, name, location)
+    -> VALUES (1, 'Fair Price Shop 1', 'Delhi'),
+    ->        (2, 'Fair Price Shop 2', 'Mumbai');
+Query OK, 2 rows affected (0.00 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql>
+mysql> -- Inserting data into Suppliers
+mysql> INSERT INTO Suppliers (supplier_id, name, contact)
+    -> VALUES (1, 'Supplier A', '9990011223'),
+    ->        (2, 'Supplier B', '8887766554');
+Query OK, 2 rows affected (0.00 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql>
+mysql> -- Inserting data into Transactions
+mysql> INSERT INTO Transactions (transaction_id, card_number, commodity_id, center_id, date, quantity, total_amount)
+    -> VALUES (1, 101, 1, 1, '2024-10-01', 5, 150.00),
+    ->        (2, 102, 2, 2, '2024-10-02', 10, 250.00);
+Query OK, 2 rows affected (0.01 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql>
+mysql> -- Inserting data into Supplies
+mysql> INSERT INTO Supplies (supply_id, supplier_id, commodity_id, center_id, supply_date, quantity)
+    -> VALUES (1, 1, 1, 1, '2024-09-30', 100),
+    ->        (2, 2, 2, 2, '2024-09-29', 200);
+Query OK, 2 rows affected (0.00 sec)
+Records: 2  Duplicates: 0  Warnings: 0
+
+mysql> BEGIN TRANSACTION;
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'TRANSACTION' at line 1
+mysql> UPDATE Commodities SET price = 32.00 WHERE name = 'Rice';
+Query OK, 1 row affected (0.01 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> -- Rollback if needed
+mysql> ROLLBACK;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql>
+mysql> -- Or commit the change
+mysql> COMMIT;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT Ration_Card_Holder.name, Commodities.name AS commodity_name, Transactions.total_amount
+    -> FROM Ration_Card_Holder
+    -> INNER JOIN Transactions ON Ration_Card_Holder.card_number = Transactions.card_number
+    -> INNER JOIN Commodities ON Transactions.commodity_id = Commodities.commodity_id;
++---------------+----------------+--------------+
+| name          | commodity_name | total_amount |
++---------------+----------------+--------------+
+| Amit Kumar    | Rice           |       150.00 |
+| Sunita Sharma | Wheat          |       250.00 |
++---------------+----------------+--------------+
+2 rows in set (0.02 sec)
+
+mysql> SELECT Ration_Card_Holder.name, Transactions.total_amount
+    -> FROM Ration_Card_Holder
+    -> LEFT JOIN Transactions ON Ration_Card_Holder.card_number = Transactions.card_number;
++---------------+--------------+
+| name          | total_amount |
++---------------+--------------+
+| Amit Kumar    |       150.00 |
+| Sunita Sharma |       250.00 |
++---------------+--------------+
+2 rows in set (0.01 sec)
+
+mysql> CREATE VIEW Delhi_Holders AS
+    -> SELECT * FROM Ration_Card_Holder WHERE address = 'Delhi';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> SELECT Distribution_Center.name, SUM(Transactions.quantity) AS total_quantity
+    -> FROM Transactions
+    -> INNER JOIN Distribution_Center ON Transactions.center_id = Distribution_Center.center_id
+    -> GROUP BY Distribution_Center.name;
++-------------------+----------------+
+| name              | total_quantity |
++-------------------+----------------+
+| Fair Price Shop 1 |              5 |
+| Fair Price Shop 2 |             10 |
++-------------------+----------------+
+2 rows in set (0.01 sec)
+
+mysql>
